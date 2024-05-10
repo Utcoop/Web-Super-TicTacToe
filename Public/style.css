@@ -1,0 +1,30 @@
+.cell{
+    width: 75px;
+    height: 75px;
+    border: 1px solid;
+    box-shadow: none;
+    line-height: 75px;
+    font-size: 50px;
+    cursor: pointer;
+
+}
+body{
+    text-align: center;
+}
+#gameContainer{
+    font-family: "Serif", cursive;
+    text-align: center;
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    grid-template-rows: repeat(3, auto);
+    justify-content: center;
+    vertical-align: auto;
+}
+.bigCell{
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    grid-template-rows: repeat(3, auto);
+    justify-content: center;
+    margin: auto;
+    border:1px solid;
+}
