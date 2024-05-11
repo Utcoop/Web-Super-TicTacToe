@@ -14,6 +14,18 @@ function Board({ result, setResult }) {
     ["", "", "", "", "", "", "", "", ""],
     ["", "", "", "", "", "", "", "", ""],
   ]);
+
+  const [scoreBoard, setScoreBoard] = useState([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [player, setPlayer] = useState("X");
   const [turn, setTurn] = useState("X");
   const [currSection, setCurrSection] = useState(4);
@@ -28,84 +40,98 @@ function Board({ result, setResult }) {
   }, [board]);
 
   const chooseSquare = async (square, section) => {
-    console.log(currSection);
-    if (currSection === section) {
-      if (turn === player && board[section][square] === "") {
-        setTurn(player === "X" ? "O" : "X");
-        setCurrSection(square);
+    //console.log(currSection);
 
-        await channel.sendEvent({
-          type: "game-move",
-          data: { square, player, currSection },
-        });
-        setBoard(
-          board.forEach((section)=>{
-            section.map((val, idx) => {
-              if (idx === square && val === "") {
-                return player;
-              }
-              return val;
-            })
-          })
-        );
-      }
+    if (turn === player && board[section][square] === "" && currSection===section) {
+      setTurn(player === "X" ? "O" : "X");
+      setCurrSection(square);
+
+      await channel.sendEvent({
+        type: "game-move",
+        data: { square, player, currSection },
+      });
+      setBoard(
+        board.map((boardSection) => {
+          boardSection.forEach((val, idx) => {
+            if (idx === square && val === "") {
+              boardSection[idx]=player;
+            }
+          });
+          return boardSection;
+        })
+      );
+      console.log("Blank square clicked - Choose Square complete");
     }
   };
 
   //update this with the 2d Array representing the board state
   const checkWin = () => {
+    console.log("Check win started");
     Patterns.forEach((currPattern) => {
-      const firstPlayer = board[currPattern[0]];
+      const firstPlayer = scoreBoard[currPattern[0]];
       if (firstPlayer === "") return;
       let foundWinningPattern = true;
       currPattern.forEach((idx) => {
-        if (board[idx] !== firstPlayer) {
+        if (scoreBoard[idx] !== firstPlayer) {
           foundWinningPattern = false;
         }
       });
-
       if (foundWinningPattern) {
-        setResult({ winner: board[currPattern[0]], state: "won" });
+        setResult({ winner: scoreBoard[currPattern[0]], state: "won" });
       }
     });
+    console.log("Check win ended");
   };
 
   const checkIfTie = () => {
+    console.log("Check if tie started");
     let filled = true;
-    board.forEach((section) => {
-      section.forEach((square) => {
-        if (square === "") {
-          filled = false;
-        }
-      });
+    scoreBoard.forEach((square) => {
+      if (square === "") {
+        filled = false;
+      }
     });
-
     if (filled) {
       setResult({ winner: "none", state: "tie" });
     }
+    console.log("Check if tie ended");
   };
 
   channel.on((event) => {
+    console.log("event start");
     if (event.type === "game-move" && event.user.id !== client.userID) {
       const currentPlayer = event.data.player === "X" ? "O" : "X";
       setPlayer(currentPlayer);
+      console.log("Current player changed");
       setTurn(currentPlayer);
+      console.log("Current turn changed");
       setCurrSection(event.data.square);
-      setBoard(
-        board.forEach((section)=>{
-          section.map((val, idx) => {
+      console.log("Current section changed");
+setBoard(
+        board.map((boardSection) => {
+          boardSection.forEach((val, idx) => {
             if (idx === event.data.square && val === "") {
-              return event.data.player;
+              boardSection[idx]=event.data.player;
             }
-            return val;
-          })
+          });
+          return boardSection;
         })
       );
+      console.log("Board Set");
+      setScoreBoard(
+        scoreBoard.map((val, idx) => {
+          if (idx === event.data.square && val === "") {
+            return event.data.player;
+          }
+          return val;
+        })
+      );
+      console.log("Scoreboard set");
     }
   });
 
   return (
-    <div className="board">
+    <div className="boardContainer">
       <div className="boardSection">
         <div className="row">
           <Square
