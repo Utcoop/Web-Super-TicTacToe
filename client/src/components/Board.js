@@ -42,7 +42,11 @@ function Board({ result, setResult }) {
   const chooseSquare = async (square, section) => {
     //console.log(currSection);
 
-    if (turn === player && board[section][square] === "" && currSection===section) {
+    if (
+      turn === player &&
+      board[section][square] === "" &&
+      currSection === section
+    ) {
       setTurn(player === "X" ? "O" : "X");
       setCurrSection(square);
 
@@ -54,7 +58,7 @@ function Board({ result, setResult }) {
         board.map((boardSection) => {
           boardSection.forEach((val, idx) => {
             if (idx === square && val === "") {
-              boardSection[idx]=player;
+              boardSection[idx] = player;
             }
           });
           return boardSection;
@@ -107,11 +111,11 @@ function Board({ result, setResult }) {
       console.log("Current turn changed");
       setCurrSection(event.data.square);
       console.log("Current section changed");
-setBoard(
+      setBoard(
         board.map((boardSection) => {
           boardSection.forEach((val, idx) => {
             if (idx === event.data.square && val === "") {
-              boardSection[idx]=event.data.player;
+              boardSection[idx] = event.data.player;
             }
           });
           return boardSection;
