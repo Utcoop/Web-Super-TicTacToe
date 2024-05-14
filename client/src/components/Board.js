@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useChannelStateContext, useChatContext } from "stream-chat-react";
 import Square from "./Square";
 import { Patterns } from "../WinningPatterns";
+
+const sections = document.querySelectorAll(".boardSection");
 function Board({ result, setResult }) {
   const [board, setBoard] = useState([
     ["", "", "", "", "", "", "", "", ""],
@@ -33,44 +35,89 @@ function Board({ result, setResult }) {
   const { channel } = useChannelStateContext();
   const { client } = useChatContext();
 
+  //console.log(sections);
   useEffect(() => {
+    checkcurrSectionWin();
     checkIfTie();
     checkWin();
     // eslint-disable-next-line
   }, [board]);
 
   const chooseSquare = async (square, section) => {
-    //console.log(currSection);
-
+    console.log(currSection);
+    let boardFull = sections[currSection].getAttribute("data-full");
+    console.log(boardFull);
     if (
       turn === player &&
       board[section][square] === "" &&
-      currSection === section
+      currSection === section &&
+      boardFull === "false"
     ) {
       setTurn(player === "X" ? "O" : "X");
       setCurrSection(square);
-
+      
       await channel.sendEvent({
         type: "game-move",
         data: { square, player, currSection },
       });
       setBoard(
-        board.map((boardSection) => {
-          boardSection.forEach((val, idx) => {
-            if (idx === square && val === "") {
-              boardSection[idx] = player;
-            }
-          });
+        board.map((boardSection, boardIdx) => {
+          if (boardIdx === currSection) {
+            return boardSection.map((val, idx) => {
+              if (idx === square && val === "") {
+                return player;
+              }
+              return val;
+            });
+          }
           return boardSection;
         })
       );
-      console.log("Blank square clicked - Choose Square complete");
+    } else if (boardFull === "true" && turn === player) {
+      setTurn(player === "X" ? "O" : "X");
+      setCurrSection(square);
+      
+      await channel.sendEvent({
+        type: "game-move",
+        data: { square, player, currSection },
+      });
+      setBoard(
+        board.map((boardSection, boardIdx) => {
+          if (boardIdx === currSection) {
+            return boardSection.map((val, idx) => {
+              if (idx === square && val === "") {
+                return player;
+              }
+              return val;
+            });
+          }
+          return boardSection;
+        })
+      );
+    }
+  };
+
+  const checkcurrSectionWin = () => {
+    if (sections[currSection].getAttribute("data-won") === "false") {
+      Patterns.forEach((currPattern) => {
+        const firstPlayer = board[currSection][currPattern[0]];
+        if (firstPlayer === "") return;
+        let foundWinningPattern = true;
+        currPattern.forEach((idx) => {
+          if (board[currSection][idx] !== firstPlayer) {
+            foundWinningPattern = false;
+          }
+        });
+        if (foundWinningPattern) {
+          sections[currSection].setAttribute("data-won", "true");
+          console.log(sections[currSection].getAttribute("data-won"));
+        }
+      });
     }
   };
 
   //update this with the 2d Array representing the board state
   const checkWin = () => {
-    console.log("Check win started");
     Patterns.forEach((currPattern) => {
       const firstPlayer = scoreBoard[currPattern[0]];
       if (firstPlayer === "") return;
@@ -84,11 +131,9 @@ function Board({ result, setResult }) {
         setResult({ winner: scoreBoard[currPattern[0]], state: "won" });
       }
     });
-    console.log("Check win ended");
   };
 
   const checkIfTie = () => {
-    console.log("Check if tie started");
     let filled = true;
     scoreBoard.forEach((square) => {
       if (square === "") {
@@ -98,30 +143,28 @@ function Board({ result, setResult }) {
     if (filled) {
       setResult({ winner: "none", state: "tie" });
     }
-    console.log("Check if tie ended");
   };
 
   channel.on((event) => {
-    console.log("event start");
     if (event.type === "game-move" && event.user.id !== client.userID) {
       const currentPlayer = event.data.player === "X" ? "O" : "X";
       setPlayer(currentPlayer);
-      console.log("Current player changed");
       setTurn(currentPlayer);
-      console.log("Current turn changed");
       setCurrSection(event.data.square);
-      console.log("Current section changed");
       setBoard(
-        board.map((boardSection) => {
-          boardSection.forEach((val, idx) => {
-            if (idx === event.data.square && val === "") {
-              boardSection[idx] = event.data.player;
-            }
-          });
+        board.map((boardSection, boardIdx) => {
+          if (boardIdx === event.data.currSection) {
+            return boardSection.map((val, idx) => {
+              if (idx === event.data.square && val === "") {
+                return event.data.player;
+              }
+              return val;
+            });
+          }
           return boardSection;
         })
       );
-      console.log("Board Set");
+
       setScoreBoard(
         scoreBoard.map((val, idx) => {
           if (idx === event.data.square && val === "") {
@@ -130,13 +173,12 @@ function Board({ result, setResult }) {
           return val;
         })
       );
-      console.log("Scoreboard set");
     }
   });
 
   return (
     <div className="boardContainer">
-      <div className="boardSection">
+      <div className="boardSection" data-won="false" data-full="false" id="0">
         <div className="row">
           <Square
             val={board[0][0]}
@@ -198,7 +240,7 @@ function Board({ result, setResult }) {
           />
         </div>
       </div>
-      <div className="boardSection">
+      <div className="boardSection" data-won="false" data-full="false" id="1">
         <div className="row">
           <Square
             val={board[1][0]}
@@ -260,7 +302,7 @@ function Board({ result, setResult }) {
           />
         </div>
       </div>
-      <div className="boardSection">
+      <div className="boardSection" data-won="false" data-full="false" id="2">
         <div className="row">
           <Square
             val={board[2][0]}
@@ -322,7 +364,7 @@ function Board({ result, setResult }) {
           />
         </div>
       </div>
-      <div className="boardSection">
+      <div className="boardSection" data-won="false" data-full="false" id="3">
         <div className="row">
           <Square
             val={board[3][0]}
@@ -384,7 +426,7 @@ function Board({ result, setResult }) {
           />
         </div>
       </div>
-      <div className="boardSection">
+      <div className="boardSection" data-won="false" data-full="false" id="4">
         <div className="row">
           <Square
             val={board[4][0]}
@@ -446,7 +488,7 @@ function Board({ result, setResult }) {
           />
         </div>
       </div>
-      <div className="boardSection">
+      <div className="boardSection" data-won="false" data-full="false" id="5">
         <div className="row">
           <Square
             val={board[5][0]}
@@ -508,7 +550,7 @@ function Board({ result, setResult }) {
           />
         </div>
       </div>
-      <div className="boardSection">
+      <div className="boardSection" data-won="false" data-full="false" id="6">
         <div className="row">
           <Square
             val={board[6][0]}
@@ -570,7 +612,7 @@ function Board({ result, setResult }) {
           />
         </div>
       </div>
-      <div className="boardSection">
+      <div className="boardSection" data-won="false" data-full="false" id="7">
         <div className="row">
           <Square
             val={board[7][0]}
@@ -579,13 +621,13 @@ function Board({ result, setResult }) {
             }}
           />
           <Square
-            val={[7][1]}
+            val={board[7][1]}
             chooseSquare={() => {
               chooseSquare(1, 7);
             }}
           />
           <Square
-            val={[7][2]}
+            val={board[7][2]}
             chooseSquare={() => {
               chooseSquare(2, 7);
             }}
@@ -593,19 +635,19 @@ function Board({ result, setResult }) {
         </div>
         <div className="row">
           <Square
-            val={[7][3]}
+            val={board[7][3]}
             chooseSquare={() => {
               chooseSquare(3, 7);
             }}
           />
           <Square
-            val={[7][4]}
+            val={board[7][4]}
             chooseSquare={() => {
               chooseSquare(4, 7);
             }}
           />
           <Square
-            val={[7][5]}
+            val={board[7][5]}
             chooseSquare={() => {
               chooseSquare(5, 7);
             }}
@@ -613,26 +655,26 @@ function Board({ result, setResult }) {
         </div>
         <div className="row">
           <Square
-            val={[7][6]}
+            val={board[7][6]}
             chooseSquare={() => {
               chooseSquare(6, 7);
             }}
           />
           <Square
-            val={[7][7]}
+            val={board[7][7]}
             chooseSquare={() => {
               chooseSquare(7, 7);
             }}
           />
           <Square
-            val={[7][8]}
+            val={board[7][8]}
             chooseSquare={() => {
               chooseSquare(8, 7);
             }}
           />
         </div>
       </div>
-      <div className="boardSection">
+      <div className="boardSection" data-won="false" data-full="false" id="8">
         <div className="row">
           <Square
             val={board[8][0]}
